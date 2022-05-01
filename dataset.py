@@ -1,5 +1,7 @@
+from calendar import EPOCH
 from importlib.resources import path
 import pathlib
+from venv import create
 import PIL
 import PIL.Image
 import matplotlib.pyplot as plt
@@ -12,6 +14,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 import glob
 from glob import glob
+
 #os.path.join 경로 이어줌 
 
 
@@ -58,7 +61,7 @@ class_names = train_ds.class_names
 # print(class_names)
 
 
-#시각화하기
+# 시각화하기
 # plt.figure(figsize=(10, 10))
 # for images, labels in train_ds.take(1):
 #   for i in range(9):
@@ -87,9 +90,11 @@ first_image = image_batch[0]
 # Notice the pixels values are now in `[0,1]`.
 # print(np.min(first_image), np.max(first_image)
 
+
+
+
 #model
 num_classes = 2
-
 model = Sequential([
   layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
   layers.Conv2D(16, 3, padding='same', activation='relu'),
@@ -101,13 +106,117 @@ model = Sequential([
   layers.Flatten(),
   layers.Dense(128, activation='relu'),
   layers.Dense(num_classes)
+  ])
+
+model.compile(optimizer='adam',
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+
+epochs=5
+history = model.fit(
+  train_ds,
+  validation_data=val_ds,
+  epochs=epochs
+)
+
+# model.summary()
+
+#훈련한 모델 저장
+# model.fit(train_ds, epochs = 5)
+# model.save('save_model')
+
+# new_model = tf.keras.models.load_model('save_model')
+# new_model.summary()
+
+
+
+# checkpoint_path = "training_1/cp.ckpt"
+# checkpoint_dir = os.path.dirname(checkpoint_path)
+
+# # 모델의 가중치를 저장하는 콜백 만들기
+# cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+#                                                  save_weights_only=True,
+#                                                  verbose=1)
+
+# # 새로운 콜백으로 모델 훈련하기
+# model.fit(train_ds,   
+#           epochs=10,
+#           validation_data=val_ds,
+#           callbacks=[cp_callback])  # 콜백을 훈련에 전달합니다
+          
+
+
+
+# 옵티마이저의 상태를 저장하는 것과 관련되어 경고가 발생할 수 있습니다.
+# 이 경고는 (그리고 이 노트북의 다른 비슷한 경고는) 이전 사용 방식을 권장하지 않기 위함이며 무시해도 좋습니다.
+
+
+# acc = history.history['accuracy']
+# val_acc = history.history['val_accuracy']
+
+# loss=history.history['loss']
+# val_loss=history.history['val_loss']
+
+# epochs_range = range(epochs)
+
+# plt.figure(figsize=(8, 8))
+# plt.subplot(1, 2, 1)
+# plt.plot(epochs_range, acc, label='Training Accuracy')
+# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+# plt.legend(loc='lower right')
+# plt.title('Training and Validation Accuracy')
+
+# plt.subplot(1, 2, 2)
+# plt.plot(epochs_range, loss, label='Training Loss')
+# plt.plot(epochs_range, val_loss, label='Validation Loss')
+# plt.legend(loc='upper right')
+# plt.title('Training and Validation Loss')
+# plt.show()
+
+with tf.device('/cpu:0'): #개빡쳐 M1아직 증강 지원 안 함;; 이거 붙여줘야해
+  data_augmentation = keras.Sequential(
+    [
+      layers.experimental.preprocessing.RandomFlip("horizontal", 
+                                                  input_shape=(img_height, 
+                                                                img_width,
+                                                                3)),
+      layers.experimental.preprocessing.RandomRotation(0.1),
+      layers.experimental.preprocessing.RandomZoom(0.1),
+    ]
+  )
+
+# plt.figure(figsize=(10, 10))
+# for images, _ in train_ds.take(1):
+#   for i in range(9):
+#     augmented_images = data_augmentation(images)
+#     ax = plt.subplot(3, 3, i + 1)
+#     plt.imshow(augmented_images[0].numpy().astype("uint8"))
+#     plt.axis("off")
+
+# plt.show()
+
+model = Sequential([
+  data_augmentation,
+  layers.experimental.preprocessing.Rescaling(1./255),
+  layers.Conv2D(16, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Conv2D(32, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Conv2D(64, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Dropout(0.2),
+  layers.Flatten(),
+  layers.Dense(128, activation='relu'),
+  layers.Dense(num_classes)
 ])
 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
+              
+# model.summary()
 
-epochs=30
+epochs=10
 history = model.fit(
   train_ds,
   validation_data=val_ds,
@@ -135,4 +244,3 @@ plt.plot(epochs_range, val_loss, label='Validation Loss')
 plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.show()
-ddddasd
