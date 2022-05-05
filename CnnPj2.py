@@ -1,4 +1,3 @@
-from calendar import EPOCH
 from importlib.resources import path
 import pathlib
 from venv import create
@@ -7,6 +6,7 @@ import PIL.Image
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from sklearn.utils import shuffle
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow import keras
@@ -15,8 +15,7 @@ from tensorflow.keras.models import Sequential
 import glob
 from glob import glob
 #os.path.join 경로 이어줌 
-
-
+#%%
 # Path = '/Users/ganghaeseong/Documents/tf/imgs'
 # train_dir = os.path.join(Path, 'train')
 # validation_dir = os.path.join(Path, 'validation')
@@ -27,11 +26,19 @@ from glob import glob
 # train_dataset = image_dataset_from_directory(train_dir, shuffle=True, batch_size = BATCH_SIZE, image_size = IMG_SIZE)
 
 data_dir = pathlib.Path('imgs')
+train_dir = os.path.join(data_dir, 'train')
+train_iu_dir = os.path.join(train_dir, 'iu')
+train_kwon_dir = os.path.join(train_dir, 'kwon')
+
+val_dir = os.path.join(data_dir, 'validation')
+val_iu_dir = os.path.join(val_dir, 'iu')
+val_kwon_dir = os.path.join(val_dir, 'kwon')
+
 image_count = len(list(data_dir.glob('*/*.jpg')))
 print(image_count)
 
 #glob으로 리스트 만들고 시각화
-iu = list(data_dir.glob('iu/*'))
+iu = list(data_dir.glob('train/iu/*.jpg'))
 img = PIL.Image.open(str(iu[10]))
 # img.show()
 
@@ -39,22 +46,31 @@ batch_size = 32
 img_height = 180
 img_width = 180
 
-#훈련세트 비율 나누기
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  data_dir,
-  validation_split=0.2,
-  subset="training",
-  seed=123,
-  image_size=(img_height, img_width),
-  batch_size=batch_size)
-#검증세트 "
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  data_dir,
-  validation_split=0.2,
-  subset="validation",
-  seed=123,
-  image_size=(img_height, img_width),
-  batch_size=batch_size)
+train_ds = image_dataset_from_directory(train_dir,
+                                        shuffle = True,
+                                        batch_size =batch_size,
+                                        image_size =(img_height, img_width))
+val_ds = image_dataset_from_directory(val_dir,
+                                      shuffle = True,
+                                      batch_size = batch_size,
+                                      image_size = (img_height, img_width))
+
+# #훈련세트 비율 나누기
+# train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+#   data_dir,
+#   validation_split=0.2,
+#   subset="training",
+#   seed=123,
+#   image_size=(img_height, img_width),
+#   batch_size=batch_size)
+# #검증세트 "
+# val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+#   data_dir,
+#   validation_split=0.2,
+#   subset="validation",
+#   seed=123,
+#   image_size=(img_height, img_width),
+#   batch_size=batch_size)
 
 class_names = train_ds.class_names
 # print(class_names)
@@ -71,10 +87,10 @@ class_names = train_ds.class_names
 # plt.show()
 
 #
-for image_batch, labels_batch in train_ds:
-    # print(image_batch.shape)
-    # print(labels_batch.shape)
-    break
+# for image_batch, labels_batch in train_ds:
+#     print(image_batch.shape)
+#     print(labels_batch.shape)
+#     break
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
@@ -116,7 +132,7 @@ model.compile(optimizer='adam',
 # )
 
 epochs=10
-model.fit(train_ds,  
+history = model.fit(train_ds,  
           validation_data=val_ds,
           epochs=epochs,) 
 
@@ -153,37 +169,27 @@ model.fit(train_ds,
 # 이 경고는 (그리고 이 노트북의 다른 비슷한 경고는) 이전 사용 방식을 권장하지 않기 위함이며 무시해도 좋습니다.
 
 
-# acc = history.history['accuracy']==
-# val_acc = history.history['val_accuracy']
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
 
-# loss=history.history['loss']
-# val_loss=history.history['val_loss']
+loss=history.history['loss']
+val_loss=history.history['val_loss']
 
-# epochs_range = range(epochs)
+epochs_range = range(epochs)
 
-# plt.figure(figsize=(8, 8))
-# plt.subplot(1, 2, 1)
-# plt.plot(epochs_range, acc, label='Training Accuracy')
-# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-# plt.legend(loc='lower right')
-# plt.title('Training and Validation Accuracy')
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
 
-# plt.subplot(1, 2, 2)
-# plt.plot(epochs_range, loss, label='Training Loss')
-# plt.plot(epochs_range, val_loss, label='Validation Loss')
-# plt.legend(loc='upper right')
-# plt.title('Training and Validation Loss')
-# plt.show()
-
-
-
-
-
-
-
-
-
-
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
 
 with tf.device('/cpu:0'): #개빡쳐 M1아직 증강 지원 안 함;; 이거 붙여줘야해
   data_augmentation = keras.Sequential(
@@ -228,19 +234,19 @@ model.compile(optimizer='adam',
 
 # model.summary()
 
-# epochs=10
-# history = model.fit(
-#   train_ds,
-#   validation_data=val_ds,
-#   epochs=epochs
-# ) 
-epochs = 15
-history = model.fit(train_ds,   
-          validation_data=val_ds,
-          epochs=epochs,)         #아까 저장한 콜백 다시 불러와서 model2학습
+epochs=10
+history = model.fit(
+  train_ds,
+  validation_data=val_ds,
+  epochs=epochs
+  ) 
+# epochs = 15
+# history = model.fit(train_ds,   
+#           validation_data=val_ds,
+#           epochs=epochs,)         #아까 저장한 콜백 다시 불러와서 model2학습
 
 # model.save('saved_model/my_model')
-model.save('save_model/my_model.h5')  
+# model.save('save_model/my_model.h5')  
 
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
@@ -266,7 +272,7 @@ plt.show()
 
 
 # #위에서 지정한 img_height = 180, img_width = 180  
-# pre_img = '/Users/ganghaeseong/Desktop/다운로드.jpeg'
+# pre_img = '/Users/ganghaeseong/Desktop/다운로드 (1).jpeg'
 
 # img = keras.preprocessing.image.load_img(
 #     pre_img, target_size=(img_height, img_width)
@@ -281,3 +287,5 @@ plt.show()
 #     "This image most likely belongs to {} with a {:.2f} percent confidence."
 #     .format(class_names[np.argmax(score)], 100 * np.max(score))
 # )
+model.save('my_model/my_model1.h5')
+# %%

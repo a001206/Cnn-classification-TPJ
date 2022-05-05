@@ -1,4 +1,3 @@
-from calendar import EPOCH
 from importlib.resources import path
 import pathlib
 from venv import create
@@ -15,7 +14,6 @@ from tensorflow.keras.models import Sequential
 import glob
 from glob import glob
 #os.path.join 경로 이어줌 
-
 
 # Path = '/Users/ganghaeseong/Documents/tf/imgs'
 # train_dir = os.path.join(Path, 'train')
@@ -71,10 +69,10 @@ class_names = train_ds.class_names
 # plt.show()
 
 #
-for image_batch, labels_batch in train_ds:
-    # print(image_batch.shape)
-    # print(labels_batch.shape)
-    break
+# for image_batch, labels_batch in train_ds:
+#     print(image_batch.shape)
+#     print(labels_batch.shape)
+#     break
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
@@ -89,12 +87,10 @@ first_image = image_batch[0]
 # Notice the pixels values are now in `[0,1]`.
 # print(np.min(first_image), np.max(first_image)
 
-
-
 num_classes = 2
 #model
-def create_model():
-  model = Sequential([
+
+model = Sequential([
     layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
     layers.Conv2D(16, 3, padding='same', activation='relu'),
     layers.MaxPooling2D(),
@@ -107,31 +103,20 @@ def create_model():
     layers.Dense(num_classes)
     ])
 
-  model.compile(optimizer='adam',
+model.compile(optimizer='adam',
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
-  return model
 
-model = create_model() #모델 만들고
-
-checkpoint_path = "training_1/cp.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path) 
-
-cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,#모델 전체를 저장하는 콜백 만들기
-                                                 save_weights_only=False,
-                                                 verbose=1,
-                                                 save_best_only=True)
-
-epochs=5
 # history = model.fit(                     #나중에 정확도 출렷할 때 history사용
 #   train_ds,
 #   validation_data=val_ds,           
 #   epochs=epochs
 # )
-model.fit(train_ds,  
-          epochs=epochs,
+
+epochs=10
+history = model.fit(train_ds,  
           validation_data=val_ds,
-          callbacks=[cp_callback])  #만든 콜백을 훈련에 전달
+          epochs=epochs,) 
 
 
 # model.summary()
@@ -166,37 +151,27 @@ model.fit(train_ds,
 # 이 경고는 (그리고 이 노트북의 다른 비슷한 경고는) 이전 사용 방식을 권장하지 않기 위함이며 무시해도 좋습니다.
 
 
-# acc = history.history['accuracy']==
-# val_acc = history.history['val_accuracy']
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
 
-# loss=history.history['loss']
-# val_loss=history.history['val_loss']
+loss=history.history['loss']
+val_loss=history.history['val_loss']
 
-# epochs_range = range(epochs)
+epochs_range = range(epochs)
 
-# plt.figure(figsize=(8, 8))
-# plt.subplot(1, 2, 1)
-# plt.plot(epochs_range, acc, label='Training Accuracy')
-# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-# plt.legend(loc='lower right')
-# plt.title('Training and Validation Accuracy')
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
 
-# plt.subplot(1, 2, 2)
-# plt.plot(epochs_range, loss, label='Training Loss')
-# plt.plot(epochs_range, val_loss, label='Validation Loss')
-# plt.legend(loc='upper right')
-# plt.title('Training and Validation Loss')
-# plt.show()
-
-
-
-
-
-
-
-
-
-
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
 
 with tf.device('/cpu:0'): #개빡쳐 M1아직 증강 지원 안 함;; 이거 붙여줘야해
   data_augmentation = keras.Sequential(
@@ -218,8 +193,8 @@ with tf.device('/cpu:0'): #개빡쳐 M1아직 증강 지원 안 함;; 이거 붙
 # #     plt.imshow(augmented_images[0].numpy().astype("uint8"))
 # #     plt.axis("off")
 # # plt.show()
-def create_model2():
-  model = Sequential([
+
+model = Sequential([
     data_augmentation,
     layers.experimental.preprocessing.Rescaling(1./255),
     layers.Conv2D(16, 3, padding='same', activation='relu'),
@@ -232,55 +207,54 @@ def create_model2():
     layers.Flatten(),
     layers.Dense(128, activation='relu'),
     layers.Dense(num_classes)
-  ])
+])
 
-  model.compile(optimizer='adam',
+
+model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
-  return model
-              
-model2 = create_model2()  #증강 데이터로 학습할 model2 만들기
+
 # model.summary()
 
-# epochs=10
-# history = model.fit(
-#   train_ds,
-#   validation_data=val_ds,
-#   epochs=epochs
-# ) 
-model2.fit(train_ds,   
-          epochs=10,
-          validation_data=val_ds,
-          callbacks=[cp_callback])         #아까 저장한 콜백 다시 불러와서 model2학습
+epochs=15
+history = model.fit(
+  train_ds,
+  validation_data=val_ds,
+  epochs=epochs
+  ) 
+# epochs = 15
+# history = model.fit(train_ds,   
+#           validation_data=val_ds,
+#           epochs=epochs,)         #아까 저장한 콜백 다시 불러와서 model2학습
 
 # model.save('saved_model/my_model')
+# model.save('save_model/my_model.h5')  
 
-# acc = history.history['accuracy']
-# val_acc = history.history['val_accuracy']
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
 
-# loss=history.history['loss']
-# val_loss=history.history['val_loss']
+loss=history.history['loss']
+val_loss=history.history['val_loss']
 
-# epochs_range = range(epochs)
+epochs_range = range(epochs)
 
-# plt.figure(figsize=(8, 8))
-# plt.subplot(1, 2, 1)
-# plt.plot(epochs_range, acc, label='Training Accuracy')
-# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-# plt.legend(loc='lower right')
-# plt.title('Training and Validation Accuracy')
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
 
-# plt.subplot(1, 2, 2)
-# plt.plot(epochs_range, loss, label='Training Loss')
-# plt.plot(epochs_range, val_loss, label='Validation Loss')
-# plt.legend(loc='upper right')
-# plt.title('Training and Validation Loss')
-# plt.show()
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
 
-model.save('save_model/my_model.h5')            #h5파일로 저장
 
 # #위에서 지정한 img_height = 180, img_width = 180  
-# pre_img = '/Users/ganghaeseong/Desktop/다운로드.jpeg'
+# pre_img = '/Users/ganghaeseong/Desktop/다운로드 (1).jpeg'
 
 # img = keras.preprocessing.image.load_img(
 #     pre_img, target_size=(img_height, img_width)
@@ -295,5 +269,3 @@ model.save('save_model/my_model.h5')            #h5파일로 저장
 #     "This image most likely belongs to {} with a {:.2f} percent confidence."
 #     .format(class_names[np.argmax(score)], 100 * np.max(score))
 # )
-#%%
-# %%
