@@ -20,11 +20,25 @@ import cv2
 
 cam = cv2.VideoCapture(0)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 180)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 180)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 180) 
 
-cv2.namedWindow("Haesung Webcam!!")
+# cv2.namedWindow("Haesung Webcam!!")
 
 img_counter = 0
+
+# while cam.isOpened():
+#     success, frame = cam.read()
+#     frame = cv2.flip(frame, 1)
+    
+#     if success:
+#         cv2.imshow('Opencv test', frame)
+
+#         key = cv2.waitKey(1) & 0xFF
+#         if(key == 27):
+#             break
+
+# cam.release()
+# cv2.destroyAllWindows()
 
 while True:
     ret, frame = cam.read()
@@ -32,11 +46,11 @@ while True:
     if not ret:
         print("failed to grab frame")
         break
-    cv2.imshow("Haesung Webcam!!", frame)
+    cv2.imshow("opencv test", frame)
 
     k = cv2.waitKey(1)
     if k%256 == 27:
-        # ESC pressed
+        # ESC pressed               
         print("Escape hit, closing...")
         break
     elif k%256 == 32:
@@ -53,6 +67,6 @@ while True:
 
 
 '/Users/ganghaeseong/Documents/tf/Cnn-classification-TPJ/cam'
-cam.release()
+# cam.release()
 
 cv2.destroyAllWindows() 
