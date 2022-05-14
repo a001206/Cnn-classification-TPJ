@@ -55,10 +55,18 @@ while True:
         break
     elif k%256 == 32:
         # SPACE pressed
-        img_name = "img{}.png".format(img_counter)
+        img_name = "img.png"
         cv2.imwrite(img_name, frame)
-        print("{} written!".format(img_name))
-        img_counter += 1
+        print('good')
+        img = cv2.imread('img.png')
+        cv2.imshow('test', img)
+
+    # elif k%256 == 32:
+    #     # SPACE pressed
+    #     img_name = "img{}.png".format(img_counter)
+    #     cv2.imwrite(img_name, frame)
+    #     print("{} written!".format(img_name))
+    #     img_counter += 1
 
 # img = cv2.imread('1.jpg', 1)
 # path = 'D:/OpenCV/Scripts/Image s'
